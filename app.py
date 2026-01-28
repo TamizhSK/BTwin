@@ -18,8 +18,8 @@ app.config['JSON_SORT_KEYS'] = False
 # Enable CORS for all routes
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Initialize SocketIO with gevent mode
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
+# Initialize SocketIO with eventlet mode
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # Database configuration
 DB_PATH = 'data.db'

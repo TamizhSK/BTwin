@@ -4,13 +4,10 @@ Flask-SocketIO==5.5.1
 python-socketio==5.12.0
 python-engineio==4.11.0
 eventlet==0.36.1
+gevent==25.9.1
 Flask-CORS==5.0.0
 plotly==5.24.1
 pandas==2.2.3
 python-dotenv==1.0.1
-
-# Database (SQLite built-in, but ORM if you want)
-Flask-SQLAlchemy==3.1.1  # Optional - only if you want ORM
-
-# Production server (install separately if deploying)
-gunicorn==22.0.0  # Install later for production
+Flask-SQLAlchemy==3.1.1
+gunicorn==22.0.0
