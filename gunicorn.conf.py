@@ -1,18 +1,28 @@
-bind = "127.0.0.1:5000"
+# Gunicorn Configuration for Battery Digital Twin
+import os
+
+# Server socket
+bind = "0.0.0.0:" + str(os.environ.get("PORT", 5000))
+backlog = 2048
+
+# Worker processes
 workers = 1
 worker_class = "gevent"
 worker_connections = 1000
 timeout = 30
 keepalive = 2
+
+# Restart workers after this many requests, to help prevent memory leaks
 max_requests = 1000
 max_requests_jitter = 100
+
+# Load application code before the worker processes are forked
 preload_app = True
-daemon = False
-pidfile = "/tmp/gunicorn.pid"
-user = "raspberrypi"
-group = "raspberrypi"
-tmp_upload_dir = None
-logfile = "/var/log/gunicorn/battery_twin.log"
-loglevel = "info"
-access_logfile = "/var/log/gunicorn/battery_twin_access.log"
-access_logformat = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
+
+# Process naming
+proc_name = 'battery_twin'
+
+# Logging
+loglevel = 'info'
+accesslog = '-'
+errorlog = '-'
