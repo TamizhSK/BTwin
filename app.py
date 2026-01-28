@@ -18,8 +18,8 @@ app.config['JSON_SORT_KEYS'] = False
 # Enable CORS for all routes
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Initialize SocketIO with threading mode
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+# Initialize SocketIO with threading mode and polling only
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', transports=['polling'])
 
 # Database configuration
 DB_PATH = 'data.db'
