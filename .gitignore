@@ -1,0 +1,16 @@
+# Battery Digital Twin
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+.env
+data.db
+*.log
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,250 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #000000;
+    min-height: 100vh;
+    padding: 20px;
+    color: #00ff00;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.header {
+    background: #111111;
+    border: 2px solid #00ff00;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 2em;
+    color: #00ff00;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px #00ff00;
+}
+
+.header p {
+    color: #ffffff;
+    font-size: 1em;
+}
+
+.status {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 8px 16px;
+    border: 1px solid;
+    font-weight: bold;
+}
+
+.status.connected {
+    background: #001100;
+    color: #00ff00;
+    border-color: #00ff00;
+}
+
+.status.disconnected {
+    background: #110000;
+    color: #ff0000;
+    border-color: #ff0000;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.metric-card {
+    background: #111111;
+    border: 1px solid #333333;
+    padding: 15px;
+    transition: border-color 0.3s ease;
+}
+
+.metric-card:hover {
+    border-color: #00ff00;
+}
+
+.metric-label {
+    font-size: 0.8em;
+    color: #888888;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.metric-value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #00ff00;
+    margin-bottom: 5px;
+    text-shadow: 0 0 5px #00ff00;
+}
+
+.metric-unit {
+    font-size: 0.8em;
+    color: #888888;
+}
+
+.metric-card.critical .metric-value {
+    color: #ff0000;
+    text-shadow: 0 0 5px #ff0000;
+}
+
+.metric-card.warning .metric-value {
+    color: #ffff00;
+    text-shadow: 0 0 5px #ffff00;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.chart-container {
+    background: #111111;
+    border: 1px solid #333333;
+    padding: 15px;
+}
+
+.chart-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #00ff00;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #333333;
+}
+
+.gauge-container {
+    background: #111111;
+    border: 1px solid #333333;
+    padding: 15px;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .header h1 {
+        font-size: 1.2em;
+    }
+    
+    .header p {
+        font-size: 0.9em;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .metric-card {
+        padding: 10px;
+    }
+    
+    .metric-value {
+        font-size: 1.4em;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .chart-container, .gauge-container {
+        padding: 10px;
+    }
+    
+    #voltageChart, #currentChart, #powerChart, #tempChart {
+        height: 250px !important;
+    }
+    
+    #tempGauge, #powerGauge {
+        height: 200px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+    
+    .header {
+        padding: 10px;
+    }
+    
+    .header h1 {
+        font-size: 1em;
+    }
+    
+    .header p {
+        font-size: 0.8em;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .metric-card {
+        padding: 8px;
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 1.2em;
+    }
+    
+    .metric-label {
+        font-size: 0.7em;
+    }
+    
+    .metric-unit {
+        font-size: 0.7em;
+    }
+    
+    .chart-title {
+        font-size: 0.9em;
+    }
+    
+    #voltageChart, #currentChart, #powerChart, #tempChart {
+        height: 200px !important;
+    }
+    
+    #tempGauge, #powerGauge {
+        height: 180px !important;
+    }
+    
+    .footer p {
+        font-size: 0.7em;
+    }
+}
+
+.footer {
+    text-align: center;
+    color: #888888;
+    margin-top: 20px;
+    padding: 15px;
+    font-size: 0.8em;
+    border-top: 1px solid #333333;
+}
+
+.last-update {
+    color: #888888;
+    font-size: 0.8em;
+    margin-top: 8px;
+}
