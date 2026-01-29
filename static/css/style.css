@@ -7,48 +7,248 @@
 body {
     font-family: 'Courier New', monospace;
     background: #000000;
+    color: #00ff00;
     min-height: 100vh;
-    padding: 20px;
-    color: #00ff00;
+    overflow-x: auto;
 }
 
-.container {
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-.header {
-    background: #111111;
+.terminal {
+    min-height: 100vh;
+    background: #000000;
     border: 2px solid #00ff00;
-    padding: 20px;
-    margin-bottom: 20px;
-    text-align: center;
+    margin: 10px;
 }
 
-.header h1 {
-    font-size: 2em;
+.terminal-header {
+    background: #001100;
+    border-bottom: 1px solid #00ff00;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.terminal-title {
+    font-size: 1.2em;
+    font-weight: bold;
     color: #00ff00;
-    margin-bottom: 10px;
     text-shadow: 0 0 10px #00ff00;
 }
 
-.header p {
-    color: #ffffff;
-    font-size: 1em;
+.terminal-status {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    font-size: 0.9em;
 }
 
-.status {
-    display: inline-block;
-    margin-top: 15px;
-    padding: 8px 16px;
-    border: 1px solid;
-    font-weight: bold;
-}
-
-.status.connected {
-    background: #001100;
+.status-connected {
     color: #00ff00;
-    border-color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+}
+
+.status-disconnected {
+    color: #ff0000;
+    text-shadow: 0 0 5px #ff0000;
+}
+
+.terminal-content {
+    padding: 20px;
+}
+
+.section-title {
+    color: #00ff00;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-shadow: 0 0 5px #00ff00;
+    border-bottom: 1px solid #003300;
+    padding-bottom: 5px;
+}
+
+.metrics-section {
+    margin-bottom: 30px;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.metric-item {
+    background: #001100;
+    border: 1px solid #003300;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.metric-label {
+    color: #00aa00;
+    font-size: 0.9em;
+    min-width: 80px;
+}
+
+.metric-value {
+    color: #00ff00;
+    font-size: 1.4em;
+    font-weight: bold;
+    text-shadow: 0 0 5px #00ff00;
+}
+
+.metric-unit {
+    color: #00aa00;
+    font-size: 0.9em;
+}
+
+.gauges-section, .charts-section {
+    margin-bottom: 30px;
+}
+
+.gauges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.gauge-container, .chart-container {
+    background: #001100;
+    border: 1px solid #003300;
+    padding: 15px;
+}
+
+.gauge-title, .chart-title {
+    color: #00aa00;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+#voltageGauge, #tempGauge {
+    height: 250px;
+}
+
+#voltageChart, #currentChart {
+    height: 300px;
+}
+
+.terminal-footer {
+    background: #001100;
+    border-top: 1px solid #00ff00;
+    padding: 10px 20px;
+    text-align: center;
+    font-size: 0.8em;
+    color: #00aa00;
+}
+
+@media (max-width: 768px) {
+    .terminal {
+        margin: 2px;
+        border-width: 1px;
+    }
+    
+    .terminal-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+        padding: 10px;
+    }
+    
+    .terminal-title {
+        font-size: 1em;
+    }
+    
+    .terminal-status {
+        flex-direction: column;
+        gap: 5px;
+        font-size: 0.8em;
+    }
+    
+    .terminal-content {
+        padding: 10px;
+    }
+    
+    .section-title {
+        font-size: 1em;
+        margin-bottom: 10px;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    
+    .metric-item {
+        padding: 10px;
+        flex-direction: column;
+        text-align: center;
+        gap: 5px;
+    }
+    
+    .metric-label {
+        font-size: 0.8em;
+        min-width: auto;
+    }
+    
+    .metric-value {
+        font-size: 1.2em;
+    }
+    
+    .metric-unit {
+        font-size: 0.8em;
+    }
+    
+    .gauges-grid, .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .gauge-container, .chart-container {
+        padding: 10px;
+    }
+    
+    #voltageGauge, #tempGauge {
+        height: 200px;
+    }
+    
+    #voltageChart, #currentChart {
+        height: 250px;
+    }
+    
+    .terminal-footer {
+        padding: 8px 10px;
+        font-size: 0.7em;
+    }
+}
+
+@media (max-width: 480px) {
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metric-value {
+        font-size: 1.5em;
+    }
+    
+    #voltageGauge, #tempGauge {
+        height: 180px;
+    }
+    
+    #voltageChart, #currentChart {
+        height: 220px;
+    }
 }
 
 .status.disconnected {

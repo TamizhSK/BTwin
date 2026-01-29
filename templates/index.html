@@ -3,104 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Battery Digital Twin - Live Dashboard</title>
-    
-    <!-- CSS -->
+    <title>Battery Digital Twin Terminal</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
-    <!-- Plotly for charts -->
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
-    
-    <!-- Socket.IO for real-time updates -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    
-    <!-- Dashboard Configuration -->
-    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>BATTERY DIGITAL TWIN TERMINAL</h1>
-            <p>ESP32 SENSOR MONITORING SYSTEM v1.0</p>
-            <div class="status disconnected" id="connectionStatus">DISCONNECTED</div>
-            <div class="last-update" id="lastUpdate">WAITING FOR DATA...</div>
-        </div>
-        
-        <!-- Live Metrics Cards -->
-        <div class="metrics-grid" id="metricsContainer">
-            <div class="metric-card">
-                <div class="metric-label">BUS VOLTAGE</div>
-                <div class="metric-value" id="voltageValue">0.000</div>
-                <div class="metric-unit">V</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">INA CURRENT</div>
-                <div class="metric-value" id="currentValue">0.0</div>
-                <div class="metric-unit">mA</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">POWER</div>
-                <div class="metric-value" id="powerValue">0.0</div>
-                <div class="metric-unit">mW</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">TEMPERATURE</div>
-                <div class="metric-value" id="tempValue">0.0</div>
-                <div class="metric-unit">°C</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">ACS CURRENT</div>
-                <div class="metric-value" id="acsCurrentValue">0.000</div>
-                <div class="metric-unit">A</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">WIFI RSSI</div>
-                <div class="metric-value" id="wifiValue">-100</div>
-                <div class="metric-unit">dBm</div>
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-title">BATTERY DIGITAL TWIN TERMINAL v1.0</div>
+            <div class="terminal-status">
+                <span id="connectionStatus" class="status-disconnected">● DISCONNECTED</span>
+                <span id="lastUpdate">WAITING FOR DATA...</span>
             </div>
         </div>
         
-        <!-- Charts -->
-        <div class="charts-grid">
-            <div class="chart-container">
-                <div class="chart-title">VOLTAGE TREND</div>
-                <div id="voltageChart" style="height: 350px;"></div>
+        <div class="terminal-content">
+            <!-- Live Metrics -->
+            <div class="metrics-section">
+                <div class="section-title">> LIVE SENSOR DATA</div>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <span class="metric-label">VOLTAGE:</span>
+                        <span class="metric-value" id="voltageValue">0.00</span>
+                        <span class="metric-unit">V</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">CURRENT:</span>
+                        <span class="metric-value" id="currentValue">0.0</span>
+                        <span class="metric-unit">mA</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">POWER:</span>
+                        <span class="metric-value" id="powerValue">0.0</span>
+                        <span class="metric-unit">mW</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">TEMP:</span>
+                        <span class="metric-value" id="tempValue">0.0</span>
+                        <span class="metric-unit">°C</span>
+                    </div>
+                </div>
             </div>
-            <div class="chart-container">
-                <div class="chart-title">CURRENT TREND</div>
-                <div id="currentChart" style="height: 350px;"></div>
+
+            <!-- Gauges -->
+            <div class="gauges-section">
+                <div class="section-title">> SYSTEM GAUGES</div>
+                <div class="gauges-grid">
+                    <div class="gauge-container">
+                        <div class="gauge-title">VOLTAGE METER</div>
+                        <div id="voltageGauge"></div>
+                    </div>
+                    <div class="gauge-container">
+                        <div class="gauge-title">TEMPERATURE METER</div>
+                        <div id="tempGauge"></div>
+                    </div>
+                </div>
             </div>
-            <div class="chart-container">
-                <div class="chart-title">POWER TREND</div>
-                <div id="powerChart" style="height: 350px;"></div>
-            </div>
-            <div class="chart-container">
-                <div class="chart-title">TEMPERATURE TREND</div>
-                <div id="tempChart" style="height: 350px;"></div>
+
+            <!-- Charts -->
+            <div class="charts-section">
+                <div class="section-title">> REAL-TIME CHARTS</div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title">VOLTAGE TREND</div>
+                        <div id="voltageChart"></div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">CURRENT TREND</div>
+                        <div id="currentChart"></div>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <!-- Gauges -->
-        <div class="charts-grid">
-            <div class="gauge-container">
-                <div class="chart-title">TEMPERATURE GAUGE</div>
-                <div id="tempGauge" style="height: 300px;"></div>
-            </div>
-            <div class="gauge-container">
-                <div class="chart-title">POWER GAUGE</div>
-                <div id="powerGauge" style="height: 300px;"></div>
-            </div>
-        </div>
-        
-        <!-- Footer -->
-        <div class="footer">
-            <p>BATTERY DIGITAL TWIN v1.0 | ESP32 + RASPBERRY PI + FLASK</p>
-            <p>DATA AUTO-SAVES TO SQLITE | UPDATES EVERY 2 SECONDS</p>
+
+        <div class="terminal-footer">
+            <div class="footer-text">ESP32 → MQTT → RASPBERRY PI → FLASK | DATA UPDATES EVERY 2 SECONDS</div>
         </div>
     </div>
     
-    <!-- Dashboard JavaScript -->
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/simple_dashboard.js') }}"></script>
 </body>
 </html>
