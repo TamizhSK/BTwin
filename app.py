@@ -49,7 +49,10 @@ def init_db():
                   current_ma REAL, 
                   power_mw REAL, 
                   temperature REAL, 
-                  acs_current_a REAL, 
+                  humidity REAL,
+                  ads_voltage REAL,
+                  soc_percent REAL,
+                  soh_percent REAL,
                   wifi_rssi INTEGER)''')
     conn.commit()
     conn.close()
@@ -63,15 +66,18 @@ def save_sensor_data(data):
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute('''INSERT INTO readings 
-                     (timestamp, device_id, voltage, current_ma, power_mw, temperature, acs_current_a, wifi_rssi)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                     (timestamp, device_id, voltage, current_ma, power_mw, temperature, humidity, ads_voltage, soc_percent, soh_percent, wifi_rssi)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                   (datetime.now().isoformat(), 
                    data.get('device_id', 'ESP32_01'), 
-                   data.get('voltage', data.get('bus_voltage', 0)),
-                   data.get('current_ma', data.get('ina_current_mA', 0)),
-                   data.get('power_mw', data.get('voltage', data.get('bus_voltage', 0)) * data.get('current_ma', data.get('ina_current_mA', 0))),
-                   data.get('temperature', data.get('temp', 0)),
-                   data.get('acs_current_a', data.get('acs_current_A', 0)),
+                   data.get('voltage', 0),
+                   data.get('current_ma', 0),
+                   data.get('power_mw', 0),
+                   data.get('temperature', 0),
+                   data.get('humidity', 0),
+                   data.get('ads_voltage', 0),
+                   data.get('soc_percent', 0),
+                   data.get('soh_percent', 100),
                    data.get('wifi_rssi', -100)))
         conn.commit()
         conn.close()
@@ -237,18 +243,7 @@ def get_latest():
         conn.close()
         
         if row:
-            data = dict(row)
-            # Convert to ESP32 format
-            esp_data = {
-                'temp': data.get('temperature', 0),
-                'humidity': 0,  # Not stored
-                'bus_voltage': data.get('voltage', 0),
-                'ina_current_mA': data.get('current_ma', 0),
-                'ads_a0_volt': 0,  # Not stored
-                'acs_current_A': data.get('acs_current_a', 0),
-                'wifi_rssi': data.get('wifi_rssi', -100)
-            }
-            return jsonify({'success': True, 'data': esp_data})
+            return jsonify({'success': True, 'data': dict(row)})
         else:
             return jsonify({'success': False, 'message': 'No data found'})
             
