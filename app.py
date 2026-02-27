@@ -37,23 +37,66 @@ MQTT_PASSWORD = os.getenv('MQTT_PASSWORD', '')
 # Global MQTT client
 mqtt_client = None
 
+# ── Battery Digital Twin (PyBaMM DFN + EKF + SOH) ─────────────────────────────
+battery_twin = None
+_twin_lock = threading.Lock()
+
+def _init_battery_twin():
+    """Initialise the DFN-based digital twin in a background thread."""
+    global battery_twin
+    try:
+        from dfn_model.battery_twin import BatteryDigitalTwin
+        capacity = float(os.getenv('BATTERY_CAPACITY_AH', '2.0'))
+        param_set = os.getenv('PYBAMM_PARAM_SET', 'Chen2020')
+        twin = BatteryDigitalTwin(
+            parameter_set=param_set,
+            cell_capacity_ah=capacity,
+        )
+        with _twin_lock:
+            battery_twin = twin
+        print(f"[Twin] BatteryDigitalTwin started (PyBaMM / {param_set})")
+    except Exception as exc:
+        print(f"[Twin] WARNING: could not load BatteryDigitalTwin: {exc}")
+        print("[Twin] Dashboard will run without DFN model.")
+
+# Start twin init in background (non-blocking)
+threading.Thread(target=_init_battery_twin, daemon=True, name="Twin-init").start()
+# ──────────────────────────────────────────────────────────────────────────────
+
 def init_db():
     """Initialize SQLite database with readings table"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS readings 
+    c.execute('''CREATE TABLE IF NOT EXISTS readings
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  timestamp TEXT, 
-                  device_id TEXT, 
-                  voltage REAL, 
-                  current_ma REAL, 
-                  power_mw REAL, 
-                  temperature REAL, 
+                  timestamp TEXT,
+                  device_id TEXT,
+                  voltage REAL,
+                  current_ma REAL,
+                  power_mw REAL,
+                  temperature REAL,
                   humidity REAL,
                   ads_voltage REAL,
                   soc_percent REAL,
                   soh_percent REAL,
-                  wifi_rssi INTEGER)''')
+                  wifi_rssi INTEGER,
+                  soc_ekf REAL DEFAULT 0,
+                  rul_days REAL DEFAULT 0,
+                  v_predicted REAL DEFAULT 0,
+                  innovation REAL DEFAULT 0,
+                  full_cycles REAL DEFAULT 0)''')
+    # Add new columns if upgrading from older schema
+    for col, defn in [
+        ("soc_ekf",     "REAL DEFAULT 0"),
+        ("rul_days",    "REAL DEFAULT 0"),
+        ("v_predicted", "REAL DEFAULT 0"),
+        ("innovation",  "REAL DEFAULT 0"),
+        ("full_cycles", "REAL DEFAULT 0"),
+    ]:
+        try:
+            c.execute(f"ALTER TABLE readings ADD COLUMN {col} {defn}")
+        except Exception:
+            pass  # column already exists
     conn.commit()
     conn.close()
 
@@ -61,15 +104,45 @@ def save_sensor_data(data):
     """Save sensor data to database and broadcast via WebSocket"""
     try:
         print(f"[{datetime.now()}] Processing: {data}")
-        
+
+        # ── Run digital twin step ───────────────────────────────────────
+        twin_result = {}
+        with _twin_lock:
+            twin = battery_twin
+        if twin is not None:
+            try:
+                twin_result = twin.step(
+                    voltage_v=float(data.get('voltage', 0)),
+                    current_ma=float(data.get('current_ma', 0)),
+                    temperature_c=float(data.get('temperature', 25.0)),
+                    dt=2.0,
+                )
+                data['soc_ekf']     = twin_result.get('soc_pct', 0)
+                data['soh_percent'] = twin_result.get('soh', data.get('soh_percent', 100))
+                data['rul_days']    = twin_result.get('rul_days', 0)
+                data['v_predicted'] = twin_result.get('v_predicted', 0)
+                data['innovation']  = twin_result.get('innovation', 0)
+                data['full_cycles'] = twin_result.get('full_cycles', 0)
+                data['dfn_ready']   = twin_result.get('dfn_ready', False)
+                data['dfn_status']  = twin_result.get('dfn_status', 'unknown')
+                data['ocv']         = twin_result.get('ocv', 0)
+                data['sigma_soc']   = twin_result.get('sigma_soc', 0)
+                data['r0']          = twin_result.get('r0', 0)
+                data['dfn_soc']     = twin_result.get('dfn_soc', 0)
+            except Exception as exc:
+                print(f"[Twin] step error: {exc}")
+        # ───────────────────────────────────────────────────────────────
+
         # Save to SQLite
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute('''INSERT INTO readings 
-                     (timestamp, device_id, voltage, current_ma, power_mw, temperature, humidity, ads_voltage, soc_percent, soh_percent, wifi_rssi)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                  (datetime.now().isoformat(), 
-                   data.get('device_id', 'ESP32_01'), 
+        c.execute('''INSERT INTO readings
+                     (timestamp, device_id, voltage, current_ma, power_mw,
+                      temperature, humidity, ads_voltage, soc_percent, soh_percent,
+                      wifi_rssi, soc_ekf, rul_days, v_predicted, innovation, full_cycles)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                  (datetime.now().isoformat(),
+                   data.get('device_id', 'ESP32_01'),
                    data.get('voltage', 0),
                    data.get('current_ma', 0),
                    data.get('power_mw', 0),
@@ -78,13 +151,18 @@ def save_sensor_data(data):
                    data.get('ads_voltage', 0),
                    data.get('soc_percent', 0),
                    data.get('soh_percent', 100),
-                   data.get('wifi_rssi', -100)))
+                   data.get('wifi_rssi', -100),
+                   twin_result.get('soc_pct', 0),
+                   twin_result.get('rul_days', 0),
+                   twin_result.get('v_predicted', 0),
+                   twin_result.get('innovation', 0),
+                   twin_result.get('full_cycles', 0)))
         conn.commit()
         conn.close()
-        
+
         # Broadcast live data to all connected clients via WebSocket
         socketio.emit('new_data', data)
-        
+
         return True
     except Exception as e:
         print(f"Error saving data: {e}")
@@ -158,6 +236,28 @@ def get_history():
     data = get_latest_readings(limit)
     return jsonify(data)
 
+@app.route('/api/dfn_status', methods=['GET'])
+def get_dfn_status():
+    """Return DFN model status and latest twin estimates."""
+    with _twin_lock:
+        twin = battery_twin
+    if twin is None:
+        return jsonify({"available": False, "status": "not_loaded"})
+    status = twin.dfn_status
+    status["available"] = True
+    return jsonify(status)
+
+@app.route('/api/dfn_ocv_table', methods=['GET'])
+def get_dfn_ocv_table():
+    """Return the DFN-generated OCV-SOC table for plotting."""
+    with _twin_lock:
+        twin = battery_twin
+    if twin is None or not twin.dfn.is_ready:
+        return jsonify({"ready": False, "soc": [], "ocv": []})
+    table = twin.dfn.get_ocv_table_json()
+    table["ready"] = True
+    return jsonify(table)
+
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     """Get statistics from sensor data"""
@@ -218,6 +318,10 @@ def handle_connect():
     """Handle client connection"""
     print(f"[{datetime.now()}] Client connected")
     emit('response', {'data': 'Connected to server'})
+    with _twin_lock:
+        twin = battery_twin
+    if twin is not None:
+        emit('dfn_status', twin.dfn_status)
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -230,6 +334,14 @@ def handle_request_latest():
     data = get_latest_readings(limit=1)
     if data:
         emit('new_data', data[0])
+
+@socketio.on('request_dfn_status')
+def handle_request_dfn_status():
+    """Send DFN model status to requesting client"""
+    with _twin_lock:
+        twin = battery_twin
+    if twin is not None:
+        emit('dfn_status', twin.dfn_status)
 
 @app.route('/api/latest')
 def get_latest():
@@ -268,13 +380,11 @@ if __name__ == '__main__':
     print(f"Debug Mode: {os.getenv('DEBUG', 'False')}")
     print(f"MQTT Broker: {MQTT_BROKER}:{MQTT_PORT}")
     print(f"MQTT Topic: {MQTT_TOPIC}")
+    print(f"DFN Model: PyBaMM / {os.getenv('PYBAMM_PARAM_SET', 'Chen2020')}")
     print(f"")
-    print(f"🌐 Server URLs:")
+    print(f"Server URLs:")
     print(f"   Local:    http://localhost:5001")
     print(f"   Network:  http://{local_ip}:5001")
-    print(f"")
-    print(f"📱 Share this URL with friends/invigilators:")
-    print(f"   http://{local_ip}:5001")
     print(f"")
     
     socketio.run(
