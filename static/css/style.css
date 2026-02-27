@@ -448,3 +448,104 @@ body {
     font-size: 0.8em;
     margin-top: 8px;
 }
+
+/* ── DFN Banner ─────────────────────────────────────────────────────────────── */
+.dfn-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    border-bottom: 1px solid #003300;
+    font-size: 0.85em;
+    flex-wrap: wrap;
+    gap: 8px;
+    transition: background 0.5s;
+}
+.dfn-banner-init  { background: #001a00; }
+.dfn-banner-ready { background: #001500; border-color: #00ff00; }
+.dfn-banner-error { background: #1a0000; border-color: #ff0000; }
+
+.dfn-banner-left { display: flex; align-items: center; gap: 15px; }
+.dfn-banner-right { font-size: 0.82em; color: #009900; }
+
+.dfn-label {
+    font-weight: bold;
+    color: #00ff00;
+    letter-spacing: 1px;
+}
+
+.dfn-indicator {
+    font-weight: bold;
+    animation: blink 1.2s step-end infinite;
+}
+.dfn-indicator.dfn-ready { color: #00ff00; animation: none; }
+.dfn-indicator.dfn-init  { color: #ffaa00; }
+.dfn-indicator.dfn-error { color: #ff4444; animation: none; }
+
+.dfn-param-info { color: #00aaff; font-size: 0.9em; }
+
+/* ── DFN Physics Panel ──────────────────────────────────────────────────────── */
+.dfn-section {
+    padding: 15px 20px;
+    border-bottom: 1px solid #003300;
+}
+
+.dfn-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.dfn-metric {
+    background: #001100;
+    border: 1px solid #003300;
+    padding: 10px;
+    text-align: center;
+    border-radius: 2px;
+}
+
+.dfn-metric-label {
+    font-size: 0.7em;
+    color: #009900;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.dfn-metric-value {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #00ffff;
+    text-shadow: 0 0 6px #00ffff;
+}
+
+.dfn-metric-unit {
+    font-size: 0.7em;
+    color: #006600;
+    margin-top: 2px;
+}
+
+/* EKF value highlighting */
+.ekf-value {
+    color: #00ffff !important;
+    text-shadow: 0 0 6px #00ffff !important;
+}
+
+/* ── Wide chart (OCV-SOC) ───────────────────────────────────────────────────── */
+.charts-single {
+    grid-template-columns: 1fr !important;
+}
+.chart-wide {
+    min-height: 280px;
+}
+
+/* ── Blink animation ────────────────────────────────────────────────────────── */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+@media (max-width: 768px) {
+    .dfn-grid { grid-template-columns: repeat(2, 1fr); }
+    .dfn-banner { flex-direction: column; align-items: flex-start; }
+}

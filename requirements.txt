@@ -12,3 +12,8 @@ python-dotenv==1.0.1
 Flask-SQLAlchemy==3.1.1
 gunicorn==22.0.0
 paho-mqtt==2.1.0
+# DFN electrochemical model (PyBaMM)
+# Raspberry Pi (ARM):  pip install "pybamm[jax]"
+# PC/Laptop (x86):     pip install "pybamm[plot,cite]"
+pybamm>=24.9.0
+numpy>=1.24.0
