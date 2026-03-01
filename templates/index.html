@@ -3,187 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Battery Digital Twin Terminal</title>
+    <title>BTwin — Battery Digital Twin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
-    <div class="terminal">
-        <div class="terminal-header">
-            <div class="terminal-title">BATTERY DIGITAL TWIN TERMINAL v2.0</div>
-            <div class="terminal-status">
-                <span id="connectionStatus" class="status-disconnected">● DISCONNECTED</span>
-                <span id="lastUpdate">WAITING FOR DATA...</span>
-            </div>
-        </div>
+<div class="terminal">
 
-        <div class="terminal-content">
-
-            <!-- DFN Model Status Banner -->
-            <div class="dfn-banner" id="dfnBanner">
-                <div class="dfn-banner-left">
-                    <span class="dfn-label">DFN MODEL</span>
-                    <span class="dfn-indicator" id="dfnIndicator">● INITIALIZING</span>
-                    <span class="dfn-param-info" id="dfnParamInfo">PyBaMM / Chen2020</span>
-                </div>
-                <div class="dfn-banner-right">
-                    <span class="dfn-meta" id="dfnMeta">Loading OCV-SOC table...</span>
-                </div>
-            </div>
-
-            <!-- Live Metrics -->
-            <div class="metrics-section">
-                <div class="section-title">> LIVE SENSOR DATA</div>
-                <div class="metrics-grid">
-                    <div class="metric-item">
-                        <span class="metric-label">VOLTAGE:</span>
-                        <span class="metric-value" id="voltageValue">0.00</span>
-                        <span class="metric-unit">V</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">CURRENT:</span>
-                        <span class="metric-value" id="currentValue">0.0</span>
-                        <span class="metric-unit">mA</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">POWER:</span>
-                        <span class="metric-value" id="powerValue">0.0</span>
-                        <span class="metric-unit">mW</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">TEMP:</span>
-                        <span class="metric-value" id="tempValue">0.0</span>
-                        <span class="metric-unit">°C</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">SOC (ESP32):</span>
-                        <span class="metric-value" id="socValue">0.0</span>
-                        <span class="metric-unit">%</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">SOC (EKF/DFN):</span>
-                        <span class="metric-value ekf-value" id="socEkfValue">--</span>
-                        <span class="metric-unit">%</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">SOH:</span>
-                        <span class="metric-value" id="sohValue">100</span>
-                        <span class="metric-unit">%</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">RUL:</span>
-                        <span class="metric-value" id="rulValue">--</span>
-                        <span class="metric-unit">days</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- DFN Physics Panel -->
-            <div class="dfn-section">
-                <div class="section-title">> DFN PHYSICS MODEL (PyBaMM / Chen2020 NMC/Graphite)</div>
-                <div class="dfn-grid">
-                    <div class="dfn-metric">
-                        <div class="dfn-metric-label">OCV (DFN)</div>
-                        <div class="dfn-metric-value" id="ocvValue">--</div>
-                        <div class="dfn-metric-unit">V</div>
-                    </div>
-                    <div class="dfn-metric">
-                        <div class="dfn-metric-label">V PREDICTED</div>
-                        <div class="dfn-metric-value" id="vPredValue">--</div>
-                        <div class="dfn-metric-unit">V</div>
-                    </div>
-                    <div class="dfn-metric">
-                        <div class="dfn-metric-label">INNOVATION</div>
-                        <div class="dfn-metric-value" id="innovValue">--</div>
-                        <div class="dfn-metric-unit">mV</div>
-                    </div>
-                    <div class="dfn-metric">
-                        <div class="dfn-metric-label">R0 (EKF)</div>
-                        <div class="dfn-metric-value" id="r0Value">--</div>
-                        <div class="dfn-metric-unit">mΩ</div>
-                    </div>
-                    <div class="dfn-metric">
-                        <div class="dfn-metric-label">SIGMA SOC</div>
-                        <div class="dfn-metric-value" id="sigmaValue">--</div>
-                        <div class="dfn-metric-unit">%</div>
-                    </div>
-                    <div class="dfn-metric">
-                        <div class="dfn-metric-label">CYCLES</div>
-                        <div class="dfn-metric-value" id="cyclesValue">0</div>
-                        <div class="dfn-metric-unit">equiv.</div>
-                    </div>
-                    <div class="dfn-metric">
-                        <div class="dfn-metric-label">SOH CAPACITY</div>
-                        <div class="dfn-metric-value" id="sohCapValue">--</div>
-                        <div class="dfn-metric-unit">%</div>
-                    </div>
-                    <div class="dfn-metric">
-                        <div class="dfn-metric-label">SOH RESISTANCE</div>
-                        <div class="dfn-metric-value" id="sohResValue">--</div>
-                        <div class="dfn-metric-unit">%</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gauges -->
-            <div class="gauges-section">
-                <div class="section-title">> SYSTEM GAUGES</div>
-                <div class="gauges-grid">
-                    <div class="gauge-container">
-                        <div class="gauge-title">VOLTAGE METER</div>
-                        <div id="voltageGauge"></div>
-                    </div>
-                    <div class="gauge-container">
-                        <div class="gauge-title">TEMPERATURE METER</div>
-                        <div id="tempGauge"></div>
-                    </div>
-                    <div class="gauge-container">
-                        <div class="gauge-title">SOC — EKF/DFN</div>
-                        <div id="socGauge"></div>
-                    </div>
-                    <div class="gauge-container">
-                        <div class="gauge-title">STATE OF HEALTH (SOH)</div>
-                        <div id="sohGauge"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts -->
-            <div class="charts-section">
-                <div class="section-title">> REAL-TIME CHARTS</div>
-                <div class="charts-grid">
-                    <div class="chart-container">
-                        <div class="chart-title">VOLTAGE — MEASURED vs DFN PREDICTED</div>
-                        <div id="voltageChart"></div>
-                    </div>
-                    <div class="chart-container">
-                        <div class="chart-title">SOC COMPARISON — ESP32 vs EKF/DFN</div>
-                        <div id="socChart"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- DFN OCV-SOC Curve -->
-            <div class="charts-section">
-                <div class="section-title">> DFN OCV-SOC CURVE (PyBaMM SPM @ C/20, Chen2020)</div>
-                <div class="charts-grid charts-single">
-                    <div class="chart-container chart-wide">
-                        <div class="chart-title">OPEN CIRCUIT VOLTAGE vs STATE OF CHARGE — DFN GENERATED</div>
-                        <div id="ocvChart"></div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <div class="terminal-footer">
-            <div class="footer-text">
-                ESP32 → MQTT → RASPBERRY PI → PyBaMM DFN → EKF → FLASK | 2s UPDATE | Chen2020 NMC/GRAPHITE
-            </div>
+    <!-- ── Header ──────────────────────────────────────────────── -->
+    <div class="terminal-header">
+        <div class="terminal-title">BATTERY DIGITAL TWIN v2.0</div>
+        <div class="terminal-status">
+            <span id="connectionStatus" class="status-disconnected">● DISCONNECTED</span>
+            <span id="lastUpdate">WAITING FOR DATA...</span>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/simple_dashboard.js') }}"></script>
+    <!-- ── DFN Model Banner ─────────────────────────────────────── -->
+    <div class="dfn-banner dfn-banner-init" id="dfnBanner">
+        <div class="dfn-banner-left">
+            <span class="dfn-label">DFN MODEL</span>
+            <span class="dfn-indicator dfn-init" id="dfnIndicator">● INITIALIZING</span>
+            <span class="dfn-param-info" id="dfnParamInfo">PyBaMM / Chen2020</span>
+        </div>
+        <div class="dfn-banner-right">
+            <span id="dfnMeta">Generating OCV-SOC table...</span>
+        </div>
+    </div>
+
+    <!-- ── Scrollable content ───────────────────────────────────── -->
+    <div class="terminal-content">
+
+        <!-- Live Sensor Metrics -->
+        <div class="metrics-section">
+            <div class="section-title">> LIVE SENSOR DATA</div>
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">Voltage</span>
+                    <span class="metric-value" id="voltageValue">0.00</span>
+                    <span class="metric-unit">V</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Current</span>
+                    <span class="metric-value" id="currentValue">0.0</span>
+                    <span class="metric-unit">mA</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Power</span>
+                    <span class="metric-value" id="powerValue">0.0</span>
+                    <span class="metric-unit">mW</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Temperature</span>
+                    <span class="metric-value" id="tempValue">0.0</span>
+                    <span class="metric-unit">°C</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">SOC (ESP32)</span>
+                    <span class="metric-value" id="socValue">0.0</span>
+                    <span class="metric-unit">%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">SOC (EKF/DFN)</span>
+                    <span class="metric-value ekf-value" id="socEkfValue">--</span>
+                    <span class="metric-unit">%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">SOH</span>
+                    <span class="metric-value" id="sohValue">100</span>
+                    <span class="metric-unit">%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">RUL</span>
+                    <span class="metric-value" id="rulValue">--</span>
+                    <span class="metric-unit">days</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DFN Physics Panel -->
+        <div class="dfn-section">
+            <div class="section-title">> DFN PHYSICS MODEL (Chen2020 — NMC/Graphite)</div>
+            <div class="dfn-grid">
+                <div class="dfn-metric">
+                    <div class="dfn-metric-label">OCV</div>
+                    <div class="dfn-metric-value" id="ocvValue">--</div>
+                    <div class="dfn-metric-unit">V</div>
+                </div>
+                <div class="dfn-metric">
+                    <div class="dfn-metric-label">V Predicted</div>
+                    <div class="dfn-metric-value" id="vPredValue">--</div>
+                    <div class="dfn-metric-unit">V</div>
+                </div>
+                <div class="dfn-metric">
+                    <div class="dfn-metric-label">Innovation</div>
+                    <div class="dfn-metric-value" id="innovValue">--</div>
+                    <div class="dfn-metric-unit">mV</div>
+                </div>
+                <div class="dfn-metric">
+                    <div class="dfn-metric-label">R0 (EKF)</div>
+                    <div class="dfn-metric-value" id="r0Value">--</div>
+                    <div class="dfn-metric-unit">mΩ</div>
+                </div>
+                <div class="dfn-metric">
+                    <div class="dfn-metric-label">Sigma SOC</div>
+                    <div class="dfn-metric-value" id="sigmaValue">--</div>
+                    <div class="dfn-metric-unit">%</div>
+                </div>
+                <div class="dfn-metric">
+                    <div class="dfn-metric-label">Cycles</div>
+                    <div class="dfn-metric-value" id="cyclesValue">0</div>
+                    <div class="dfn-metric-unit">equiv.</div>
+                </div>
+                <div class="dfn-metric">
+                    <div class="dfn-metric-label">SOH Cap.</div>
+                    <div class="dfn-metric-value" id="sohCapValue">--</div>
+                    <div class="dfn-metric-unit">%</div>
+                </div>
+                <div class="dfn-metric">
+                    <div class="dfn-metric-label">SOH Res.</div>
+                    <div class="dfn-metric-value" id="sohResValue">--</div>
+                    <div class="dfn-metric-unit">%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gauges -->
+        <div class="gauges-section">
+            <div class="section-title">> SYSTEM GAUGES</div>
+            <div class="gauges-grid">
+                <div class="gauge-container">
+                    <div class="gauge-title">Voltage</div>
+                    <div id="voltageGauge"></div>
+                </div>
+                <div class="gauge-container">
+                    <div class="gauge-title">Temperature</div>
+                    <div id="tempGauge"></div>
+                </div>
+                <div class="gauge-container">
+                    <div class="gauge-title">SOC — EKF/DFN</div>
+                    <div id="socGauge"></div>
+                </div>
+                <div class="gauge-container">
+                    <div class="gauge-title">State of Health</div>
+                    <div id="sohGauge"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time charts -->
+        <div class="charts-section">
+            <div class="section-title">> REAL-TIME CHARTS</div>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">Voltage — Measured vs DFN Predicted</div>
+                    <div id="voltageChart"></div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">SOC — ESP32 vs EKF/DFN</div>
+                    <div id="socChart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OCV-SOC curve -->
+        <div class="charts-section">
+            <div class="section-title">> OCV-SOC CURVE (PyBaMM SPM @ C/20 — Chen2020)</div>
+            <div class="charts-grid charts-single">
+                <div class="chart-container">
+                    <div class="chart-title">Open Circuit Voltage vs State of Charge</div>
+                    <div id="ocvChart"></div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /.terminal-content -->
+
+    <!-- ── Footer ──────────────────────────────────────────────── -->
+    <div class="terminal-footer">
+        ESP32 → MQTT → Pi → PyBaMM DFN → EKF → Flask | 2 s update | Chen2020 NMC/Graphite
+    </div>
+
+</div><!-- /.terminal -->
+
+<script src="{{ url_for('static', filename='js/simple_dashboard.js') }}"></script>
 </body>
 </html>

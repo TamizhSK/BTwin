@@ -1,551 +1,355 @@
-* {
+/* ═══════════════════════════════════════════════════════════════════
+   BTwin — Battery Digital Twin Dashboard
+   Terminal green-on-black theme — single source of truth, no duplicates
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Reset ──────────────────────────────────────────────────────── */
+*, *::before, *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+html, body {
+    width: 100%;
+    overflow-x: hidden;
+}
+
 body {
-    font-family: 'Courier New', monospace;
-    background: #000000;
+    font-family: 'Courier New', Courier, monospace;
+    background: #000;
     color: #00ff00;
     min-height: 100vh;
-    overflow-x: auto;
+    font-size: 14px;
 }
 
+/* ── Terminal shell ─────────────────────────────────────────────── */
 .terminal {
     min-height: 100vh;
-    background: #000000;
+    background: #000;
     border: 2px solid #00ff00;
-    margin: 10px;
+    margin: 6px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
+/* ── Header ─────────────────────────────────────────────────────── */
 .terminal-header {
     background: #001100;
     border-bottom: 1px solid #00ff00;
-    padding: 15px 20px;
+    padding: 10px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .terminal-title {
-    font-size: 1.2em;
+    font-size: 1.1em;
     font-weight: bold;
     color: #00ff00;
-    text-shadow: 0 0 10px #00ff00;
+    text-shadow: 0 0 8px #00ff00;
+    white-space: nowrap;
 }
 
 .terminal-status {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     align-items: center;
-    font-size: 0.9em;
+    font-size: 0.85em;
+    flex-wrap: wrap;
 }
 
-.status-connected {
-    color: #00ff00;
-    text-shadow: 0 0 5px #00ff00;
-}
+.status-connected    { color: #00ff00; text-shadow: 0 0 4px #00ff00; }
+.status-disconnected { color: #ff3333; text-shadow: 0 0 4px #ff3333; }
 
-.status-disconnected {
-    color: #ff0000;
-    text-shadow: 0 0 5px #ff0000;
+/* ── DFN Status Banner ──────────────────────────────────────────── */
+.dfn-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 16px;
+    border-bottom: 1px solid #003300;
+    font-size: 0.82em;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: #001a00;
+    transition: background 0.4s, border-color 0.4s;
+    flex-shrink: 0;
 }
+.dfn-banner-ready { background: #001500; border-color: #00cc00; }
+.dfn-banner-error { background: #1a0000; border-color: #cc0000; }
 
+.dfn-banner-left  { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dfn-banner-right { font-size: 0.82em; color: #009900; min-width: 0; word-break: break-word; }
+
+.dfn-label      { font-weight: bold; color: #00ff00; letter-spacing: 1px; }
+.dfn-param-info { color: #00aaff; }
+
+.dfn-indicator             { font-weight: bold; }
+.dfn-indicator.dfn-ready   { color: #00ff00; }
+.dfn-indicator.dfn-init    { color: #ffaa00; animation: blink 1.2s step-end infinite; }
+.dfn-indicator.dfn-error   { color: #ff4444; }
+
+/* ── Scrollable content ─────────────────────────────────────────── */
 .terminal-content {
-    padding: 20px;
+    padding: 14px 16px;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
+/* ── Section titles ─────────────────────────────────────────────── */
 .section-title {
     color: #00ff00;
-    font-size: 1.1em;
+    font-size: 0.9em;
     font-weight: bold;
-    margin-bottom: 15px;
-    text-shadow: 0 0 5px #00ff00;
+    margin-bottom: 10px;
     border-bottom: 1px solid #003300;
-    padding-bottom: 5px;
+    padding-bottom: 4px;
+    text-shadow: 0 0 4px #00ff00;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.metrics-section {
-    margin-bottom: 30px;
-}
+/* ── Metrics ────────────────────────────────────────────────────── */
+.metrics-section { margin-bottom: 20px; }
 
 .metrics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
 }
 
 .metric-item {
     background: #001100;
     border: 1px solid #003300;
-    padding: 15px;
+    padding: 10px 12px;
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
 }
 
 .metric-label {
-    color: #00aa00;
-    font-size: 0.9em;
-    min-width: 80px;
-}
-
-.metric-value {
-    color: #00ff00;
-    font-size: 1.4em;
-    font-weight: bold;
-    text-shadow: 0 0 5px #00ff00;
-}
-
-.metric-unit {
-    color: #00aa00;
-    font-size: 0.9em;
-}
-
-.gauges-section, .charts-section {
-    margin-bottom: 30px;
-}
-
-.gauges-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.charts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.gauge-container, .chart-container {
-    background: #001100;
-    border: 1px solid #003300;
-    padding: 15px;
-}
-
-.gauge-title, .chart-title {
-    color: #00aa00;
-    font-size: 0.9em;
-    margin-bottom: 10px;
-    text-align: center;
-}
-
-#voltageGauge, #tempGauge, #socGauge, #sohGauge {
-    height: 250px;
-}
-
-#voltageChart, #currentChart {
-    height: 300px;
-}
-
-.terminal-footer {
-    background: #001100;
-    border-top: 1px solid #00ff00;
-    padding: 10px 20px;
-    text-align: center;
-    font-size: 0.8em;
-    color: #00aa00;
-}
-
-    @media (max-width: 768px) {
-    .terminal {
-        margin: 2px;
-        border-width: 1px;
-    }
-    
-    .terminal-header {
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
-        padding: 10px;
-    }
-    
-    .terminal-title {
-        font-size: 1em;
-    }
-    
-    .terminal-status {
-        flex-direction: column;
-        gap: 5px;
-        font-size: 0.8em;
-    }
-    
-    .terminal-content {
-        padding: 10px;
-    }
-    
-    .section-title {
-        font-size: 1em;
-        margin-bottom: 10px;
-    }
-    
-    .metrics-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-    }
-    
-    .metric-item {
-        padding: 10px;
-        flex-direction: column;
-        text-align: center;
-        gap: 5px;
-    }
-    
-    .metric-label {
-        font-size: 0.8em;
-        min-width: auto;
-    }
-    
-    .metric-value {
-        font-size: 1.2em;
-    }
-    
-    .metric-unit {
-        font-size: 0.8em;
-    }
-    
-    .gauges-grid, .charts-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    
-    .gauge-container, .chart-container {
-        padding: 10px;
-    }
-    
-    #voltageGauge, #tempGauge, #socGauge, #sohGauge {
-        height: 200px;
-    }
-    
-    #voltageChart, #currentChart {
-        height: 250px;
-    }
-    
-    .terminal-footer {
-        padding: 8px 10px;
-        font-size: 0.7em;
-    }
-}
-
-@media (max-width: 480px) {
-    .metrics-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .metric-value {
-        font-size: 1.5em;
-    }
-    
-    #voltageGauge, #tempGauge, #socGauge, #sohGauge {
-        height: 180px;
-    }
-    
-    #voltageChart, #currentChart {
-        height: 220px;
-    }
-}
-
-.status.disconnected {
-    background: #110000;
-    color: #ff0000;
-    border-color: #ff0000;
-}
-
-.metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.metric-card {
-    background: #111111;
-    border: 1px solid #333333;
-    padding: 15px;
-    transition: border-color 0.3s ease;
-}
-
-.metric-card:hover {
-    border-color: #00ff00;
-}
-
-.metric-label {
-    font-size: 0.8em;
-    color: #888888;
+    color: #009900;
+    font-size: 0.7em;
     text-transform: uppercase;
-    margin-bottom: 8px;
-    font-weight: bold;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .metric-value {
-    font-size: 1.8em;
-    font-weight: bold;
     color: #00ff00;
-    margin-bottom: 5px;
+    font-size: 1.5em;
+    font-weight: bold;
     text-shadow: 0 0 5px #00ff00;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.metric-unit {
-    font-size: 0.8em;
-    color: #888888;
+.metric-unit { color: #006600; font-size: 0.75em; }
+
+.ekf-value {
+    color: #00ffff !important;
+    text-shadow: 0 0 5px #00ffff !important;
 }
 
-.metric-card.critical .metric-value {
-    color: #ff0000;
-    text-shadow: 0 0 5px #ff0000;
-}
-
-.metric-card.warning .metric-value {
-    color: #ffff00;
-    text-shadow: 0 0 5px #ffff00;
-}
-
-.charts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.chart-container {
-    background: #111111;
-    border: 1px solid #333333;
-    padding: 15px;
-}
-
-.chart-title {
-    font-size: 1.1em;
-    font-weight: bold;
-    color: #00ff00;
-    margin-bottom: 10px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid #333333;
-}
-
-.gauge-container {
-    background: #111111;
-    border: 1px solid #333333;
-    padding: 15px;
-}
-
-@media (max-width: 768px) {
-    body {
-        padding: 10px;
-    }
-    
-    .header h1 {
-        font-size: 1.2em;
-    }
-    
-    .header p {
-        font-size: 0.9em;
-    }
-    
-    .metrics-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    
-    .metric-card {
-        padding: 10px;
-    }
-    
-    .metric-value {
-        font-size: 1.4em;
-    }
-    
-    .charts-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-    
-    .chart-container, .gauge-container {
-        padding: 10px;
-    }
-    
-    #voltageChart, #currentChart, #powerChart, #tempChart {
-        height: 250px !important;
-    }
-    
-    #tempGauge, #powerGauge {
-        height: 200px !important;
-    }
-}
-
-@media (max-width: 480px) {
-    body {
-        padding: 5px;
-    }
-    
-    .header {
-        padding: 10px;
-    }
-    
-    .header h1 {
-        font-size: 1em;
-    }
-    
-    .header p {
-        font-size: 0.8em;
-    }
-    
-    .metrics-grid {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-    
-    .metric-card {
-        padding: 8px;
-        text-align: center;
-    }
-    
-    .metric-value {
-        font-size: 1.2em;
-    }
-    
-    .metric-label {
-        font-size: 0.7em;
-    }
-    
-    .metric-unit {
-        font-size: 0.7em;
-    }
-    
-    .chart-title {
-        font-size: 0.9em;
-    }
-    
-    #voltageChart, #currentChart, #powerChart, #tempChart {
-        height: 200px !important;
-    }
-    
-    #tempGauge, #powerGauge {
-        height: 180px !important;
-    }
-    
-    .footer p {
-        font-size: 0.7em;
-    }
-}
-
-.footer {
-    text-align: center;
-    color: #888888;
-    margin-top: 20px;
-    padding: 15px;
-    font-size: 0.8em;
-    border-top: 1px solid #333333;
-}
-
-.last-update {
-    color: #888888;
-    font-size: 0.8em;
-    margin-top: 8px;
-}
-
-/* ── DFN Banner ─────────────────────────────────────────────────────────────── */
-.dfn-banner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 20px;
-    border-bottom: 1px solid #003300;
-    font-size: 0.85em;
-    flex-wrap: wrap;
-    gap: 8px;
-    transition: background 0.5s;
-}
-.dfn-banner-init  { background: #001a00; }
-.dfn-banner-ready { background: #001500; border-color: #00ff00; }
-.dfn-banner-error { background: #1a0000; border-color: #ff0000; }
-
-.dfn-banner-left { display: flex; align-items: center; gap: 15px; }
-.dfn-banner-right { font-size: 0.82em; color: #009900; }
-
-.dfn-label {
-    font-weight: bold;
-    color: #00ff00;
-    letter-spacing: 1px;
-}
-
-.dfn-indicator {
-    font-weight: bold;
-    animation: blink 1.2s step-end infinite;
-}
-.dfn-indicator.dfn-ready { color: #00ff00; animation: none; }
-.dfn-indicator.dfn-init  { color: #ffaa00; }
-.dfn-indicator.dfn-error { color: #ff4444; animation: none; }
-
-.dfn-param-info { color: #00aaff; font-size: 0.9em; }
-
-/* ── DFN Physics Panel ──────────────────────────────────────────────────────── */
+/* ── DFN Physics Panel ──────────────────────────────────────────── */
 .dfn-section {
-    padding: 15px 20px;
-    border-bottom: 1px solid #003300;
+    margin-bottom: 20px;
+    border: 1px solid #003300;
+    background: #000800;
+    padding: 12px;
 }
 
 .dfn-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    gap: 8px;
     margin-top: 10px;
 }
 
 .dfn-metric {
     background: #001100;
-    border: 1px solid #003300;
-    padding: 10px;
+    border: 1px solid #002200;
+    padding: 8px 6px;
     text-align: center;
-    border-radius: 2px;
+    min-width: 0;
 }
 
 .dfn-metric-label {
-    font-size: 0.7em;
-    color: #009900;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
+    font-size: 0.68em;
+    color: #008800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dfn-metric-value {
-    font-size: 1.3em;
+    font-size: 1.15em;
     font-weight: bold;
     color: #00ffff;
-    text-shadow: 0 0 6px #00ffff;
+    text-shadow: 0 0 5px #00ffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.dfn-metric-unit {
-    font-size: 0.7em;
+.dfn-metric-unit { font-size: 0.68em; color: #005500; margin-top: 2px; }
+
+/* ── Gauges ─────────────────────────────────────────────────────── */
+.gauges-section { margin-bottom: 20px; }
+
+.gauges-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.gauge-container {
+    background: #001100;
+    border: 1px solid #003300;
+    padding: 10px;
+    min-width: 0;
+}
+
+.gauge-title {
+    color: #009900;
+    font-size: 0.72em;
+    text-align: center;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#voltageGauge, #tempGauge, #socGauge, #sohGauge {
+    height: 200px;
+    width: 100%;
+}
+
+/* ── Charts ─────────────────────────────────────────────────────── */
+.charts-section { margin-bottom: 20px; }
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.charts-grid.charts-single { grid-template-columns: 1fr; }
+
+.chart-container {
+    background: #001100;
+    border: 1px solid #003300;
+    padding: 10px;
+    min-width: 0;
+}
+
+.chart-title {
+    color: #009900;
+    font-size: 0.72em;
+    text-align: center;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#voltageChart, #socChart { height: 260px; width: 100%; }
+#ocvChart                { height: 280px; width: 100%; }
+
+/* ── Footer ─────────────────────────────────────────────────────── */
+.terminal-footer {
+    background: #001100;
+    border-top: 1px solid #00ff00;
+    padding: 6px 16px;
+    text-align: center;
+    font-size: 0.72em;
     color: #006600;
-    margin-top: 2px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* EKF value highlighting */
-.ekf-value {
-    color: #00ffff !important;
-    text-shadow: 0 0 6px #00ffff !important;
-}
-
-/* ── Wide chart (OCV-SOC) ───────────────────────────────────────────────────── */
-.charts-single {
-    grid-template-columns: 1fr !important;
-}
-.chart-wide {
-    min-height: 280px;
-}
-
-/* ── Blink animation ────────────────────────────────────────────────────────── */
+/* ── Animations ─────────────────────────────────────────────────── */
 @keyframes blink {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+    50%       { opacity: 0.25; }
 }
 
-@media (max-width: 768px) {
-    .dfn-grid { grid-template-columns: repeat(2, 1fr); }
-    .dfn-banner { flex-direction: column; align-items: flex-start; }
+/* ═══════════════════════════════════════════════════════════════════
+   Responsive — tablet landscape (≤1100px): collapse gauges to 2×2
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+    .gauges-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Responsive — tablet portrait (≤800px)
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 800px) {
+    .terminal { margin: 3px; }
+
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .dfn-grid     { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .gauges-grid  { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .charts-grid  { grid-template-columns: 1fr; }
+
+    .metric-value { font-size: 1.3em; }
+
+    #voltageGauge, #tempGauge, #socGauge, #sohGauge { height: 180px; }
+    #voltageChart, #socChart { height: 220px; }
+    #ocvChart { height: 240px; }
+
+    .dfn-banner    { flex-direction: column; align-items: flex-start; }
+    .terminal-footer { white-space: normal; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Responsive — phone (≤480px)
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+    .terminal {
+        margin: 0;
+        border-width: 1px;
+        border-left: none;
+        border-right: none;
+    }
+
+    .terminal-header  { flex-direction: column; text-align: center; padding: 8px 10px; }
+    .terminal-title   { font-size: 0.9em; }
+    .terminal-status  { justify-content: center; font-size: 0.75em; gap: 8px; }
+    .terminal-content { padding: 8px 10px; }
+
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .dfn-grid     { grid-template-columns: repeat(2, 1fr); gap: 5px; }
+    .gauges-grid  { grid-template-columns: 1fr; }
+
+    .metric-item      { padding: 8px; }
+    .metric-value     { font-size: 1.2em; }
+    .dfn-metric-value { font-size: 1em; }
+
+    #voltageGauge, #tempGauge, #socGauge, #sohGauge { height: 160px; }
+    #voltageChart, #socChart { height: 200px; }
+    #ocvChart { height: 210px; }
+
+    .terminal-footer { font-size: 0.65em; white-space: normal; }
 }
