@@ -196,14 +196,17 @@ class BatteryDigitalTwin:
 
     @property
     def dfn_status(self) -> dict:
-        """Return full DFN + twin status for /api/dfn_status."""
+        """
+        Return DFN + twin status dict.
+        NOTE: OCV table is NOT included here to keep SocketIO payloads small.
+        Fetch OCV table separately via GET /api/dfn_ocv_table.
+        """
         dfn_info = self.dfn.get_status()
         dfn_info.update({
             "last_result": self._last_result,
             "step_count": self._step_count,
             "uptime_s": round(time.time() - self._start_time, 1),
             "ekf_ready": self._ekf is not None,
-            "ocv_table": self.dfn.get_ocv_table_json(),
         })
         return dfn_info
 

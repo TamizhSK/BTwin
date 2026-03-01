@@ -2,8 +2,9 @@
 PyBaMM DFN Interface — Real Electrochemical Battery Model
 ==========================================================
 
-Uses PyBaMM v24.9.0 with the Chen2020 parameter set (LG M50 21700, NMC/Graphite)
-to generate physics-based OCV-SOC curves and ECM parameters.
+Uses PyBaMM (tested with 24.9+ and 25.x) with the Chen2020 parameter set
+(LG M50 21700, NMC/Graphite) to generate physics-based OCV-SOC curves
+and ECM parameters.
 
 Chen2020 Reference:
     Chen, M. et al. "Development of Experimental Techniques for Parameterization
@@ -43,23 +44,21 @@ _FALLBACK_OCV = [3.000, 3.270, 3.490, 3.550, 3.590, 3.620, 3.660, 3.690,
 
 
 def _get_solver(pybamm):
-    """Return the best available PyBaMM solver for this platform."""
-    arch = platform.machine().lower()
-    is_arm = any(a in arch for a in ('aarch64', 'armv7l', 'arm64'))
-
-    for SolverClass, kwargs in [
-        (getattr(pybamm, 'IDAKLUSolver', None), {'atol': 1e-6, 'rtol': 1e-3}),
-        (getattr(pybamm, 'CasadiSolver', None), {'atol': 1e-6, 'rtol': 1e-3}),
-        (getattr(pybamm, 'ScipySolver', None), {}),
-    ]:
+    """
+    Return the best available PyBaMM solver for this platform.
+    Tries each solver with default args (most compatible across PyBaMM versions).
+    Order: IDAKLUSolver (fastest, SUNDIALS-based) → CasadiSolver → ScipySolver.
+    """
+    for name in ('IDAKLUSolver', 'CasadiSolver', 'ScipySolver'):
+        SolverClass = getattr(pybamm, name, None)
         if SolverClass is None:
             continue
         try:
-            return SolverClass(**kwargs)
+            solver = SolverClass()
+            return solver
         except Exception:
             continue
-
-    raise RuntimeError("No working PyBaMM solver found.")
+    raise RuntimeError("No working PyBaMM solver found. Check PyBaMM install.")
 
 
 class DFNInterface:
@@ -269,10 +268,21 @@ class DFNInterface:
             charge_used = np.concatenate([[0], np.cumsum(i_arr[:-1] * dt)])
             soc_raw = np.maximum(0.0, 1.0 - charge_used / (self.cell_capacity_ah * 3600))
 
-        # Ensure SOC is increasing (discharge → SOC decreases, flip it)
-        if soc_raw[0] > soc_raw[-1]:
-            soc_raw = soc_raw[::-1].copy()
-            v_raw = v_raw[::-1].copy()
+        # Ensure arrays are numpy and finite
+        soc_raw = np.asarray(soc_raw, dtype=float)
+        v_raw = np.asarray(v_raw, dtype=float)
+        mask = np.isfinite(soc_raw) & np.isfinite(v_raw)
+        soc_raw, v_raw = soc_raw[mask], v_raw[mask]
+
+        # Sort so SOC is strictly increasing (discharge produces decreasing SOC)
+        order = np.argsort(soc_raw)
+        soc_raw = soc_raw[order]
+        v_raw = v_raw[order]
+
+        # Remove duplicate SOC values (keep last occurrence per unique SOC)
+        _, unique_idx = np.unique(soc_raw, return_index=True)
+        soc_raw = soc_raw[unique_idx]
+        v_raw = v_raw[unique_idx]
 
         # Interpolate to 101 uniform SOC points
         soc_uniform = np.linspace(float(soc_raw.min()), float(soc_raw.max()), 101)
@@ -345,17 +355,21 @@ class DFNInterface:
             if n < 2:
                 return
 
-            # Build t_eval from profile length
-            t_eval = np.linspace(0, n * dt_s, n * 2)
             # Use average current as constant approximation
             avg_current_a = abs(np.mean(current_profile_ma)) / 1000.0
             avg_current_a = max(avg_current_a, 0.01)
+            duration_s = int(round(n * dt_s))
 
-            # Set constant current discharge
-            experiment = pybamm.Experiment([f"Discharge at {avg_current_a} A for {n * dt_s} seconds"])
+            # PyBaMM Experiment string: current must be >0, duration integer seconds
+            experiment = pybamm.Experiment(
+                [f"Discharge at {avg_current_a:.4f} A for {duration_s} seconds"]
+            )
 
             solver = _get_solver(pybamm)
-            sim = pybamm.Simulation(model, experiment=experiment, parameter_values=param, solver=solver)
+            sim = pybamm.Simulation(
+                model, experiment=experiment,
+                parameter_values=param, solver=solver,
+            )
 
             with self._lock:
                 soc_init = self.dfn_last_soc if self.dfn_last_soc > 0 else 0.5
