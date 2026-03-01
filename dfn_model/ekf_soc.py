@@ -137,7 +137,8 @@ class EKFSoCEstimator:
         H = np.array([[docv_ds, 1.0]])
 
         S = H @ P_pred @ H.T + self.R_noise
-        K = (P_pred @ H.T) / float(S)   # Kalman gain [2x1]
+        S_scalar = float(S.item()) if hasattr(S, 'item') else float(S)
+        K = (P_pred @ H.T) / S_scalar   # Kalman gain [2x1]
 
         self.x = x_pred + K.flatten() * innovation
         self.x[0] = float(np.clip(self.x[0], 0.0, 1.0))  # hard clamp SOC

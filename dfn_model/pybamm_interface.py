@@ -351,15 +351,16 @@ class DFNInterface:
             avg_current_a = abs(np.mean(current_profile_ma)) / 1000.0
             avg_current_a = max(avg_current_a, 0.01)
 
-            param["Current function [A]"] = avg_current_a
+            # Set constant current discharge
+            experiment = pybamm.Experiment([f"Discharge at {avg_current_a} A for {n * dt_s} seconds"])
 
             solver = _get_solver(pybamm)
-            sim = pybamm.Simulation(model, parameter_values=param, solver=solver)
+            sim = pybamm.Simulation(model, experiment=experiment, parameter_values=param, solver=solver)
 
             with self._lock:
                 soc_init = self.dfn_last_soc if self.dfn_last_soc > 0 else 0.5
 
-            sol = sim.solve(t_eval)
+            sol = sim.solve()
 
             v_final = float(sol["Voltage [V]"].entries[-1])
             try:
