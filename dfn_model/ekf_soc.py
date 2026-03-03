@@ -68,14 +68,23 @@ class EKFSoCEstimator:
 
         self._initialized = False
 
-    def initialize_from_voltage(self, v_terminal: float, temp_c: float = 25.0):
+    def initialize_from_voltage(self, v_terminal: float, current_a: float = 0.0, temp_c: float = 25.0):
         """
-        Bootstrap SOC from resting terminal voltage using OCV→SOC inversion.
-        Call once when the battery is at rest (|I| < 50 mA).
+        Bootstrap SOC from terminal voltage using OCV→SOC inversion.
+        Compensates for IR drop if current is provided.
+        
+        Args:
+            v_terminal: Terminal voltage [V]
+            current_a:  Current [A], positive = discharge
+            temp_c:     Temperature [°C]
         """
         self.temp_c = temp_c
-        soc_init = self._dfn.soc_from_ocv(v_terminal, temp_c)
-        self.x = np.array([soc_init, 0.0])
+        # Estimate OCV by compensating for IR drop
+        v_ocv_est = v_terminal - current_a * self.R0
+        soc_init = self._dfn.soc_from_ocv(v_ocv_est, temp_c)
+        # Initialize V_RC based on current
+        v_rc_init = current_a * self.R1 * 0.5  # assume partial polarization
+        self.x = np.array([soc_init, v_rc_init])
         self.P = np.diag([0.005, 0.001])
         self._initialized = True
         return soc_init
@@ -98,7 +107,7 @@ class EKFSoCEstimator:
 
         # ---- lazy initialisation from first voltage reading ----
         if not self._initialized:
-            self.initialize_from_voltage(v_measured, temp_c)
+            self.initialize_from_voltage(v_measured, current_a, temp_c)
 
         # Update ECM params from DFN if available
         ecm = self._dfn.get_ecm_params()

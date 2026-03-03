@@ -110,8 +110,6 @@ class BatteryDigitalTwin:
                     nominal_capacity_ah=self.cell_capacity_ah,
                     nominal_R0=ecm["R0"],
                 )
-                print(f"[Twin] EKF + SOH estimator initialised "
-                      f"(R0={ecm['R0']:.4f}Ω, R1={ecm['R1']:.4f}Ω)")
 
         # ---- Run EKF ----
         if self._ekf is not None:
@@ -128,16 +126,29 @@ class BatteryDigitalTwin:
             ocv = ekf_result["ocv"]
             r0 = ekf_result["R0"]
         else:
-            # EKF not ready — use raw OCV inversion
-            soc_ekf = self.dfn.soc_from_ocv(voltage_v, temperature_c)
-            ocv = self.dfn.ocv_from_soc(soc_ekf, temperature_c)
+            # EKF not ready — use raw OCV inversion or voltage-based estimate
+            if self.dfn.is_ready:
+                soc_ekf = self.dfn.soc_from_ocv(voltage_v, temperature_c)
+                ocv = self.dfn.ocv_from_soc(soc_ekf, temperature_c)
+            else:
+                # DFN not ready — use simple linear voltage mapping (3.0V=0%, 4.2V=100%)
+                soc_ekf = max(0.0, min(1.0, (voltage_v - 3.0) / 1.2))
+                ocv = voltage_v
             v_pred = voltage_v
             innovation = 0.0
             sigma_soc = 0.05
             r0 = 0.062
 
         # ---- Update SOH ----
-        soh_result = {}
+        soh_result = {
+            "soh": 100.0,
+            "soh_capacity": 100.0,
+            "soh_resistance": 100.0,
+            "full_cycles": 0.0,
+            "rul_cycles": 0.0,
+            "rul_days": 0.0,
+            "r0_ema": r0,
+        }
         if self._soh is not None:
             soh_result = self._soh.update(
                 soc=soc_ekf,

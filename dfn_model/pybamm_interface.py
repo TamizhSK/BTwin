@@ -128,10 +128,26 @@ class DFNInterface:
         return ocv_25 - 0.0008 * (temperature_c - 25.0)
 
     def soc_from_ocv(self, ocv: float, temperature_c: float = 25.0) -> float:
-        """Invert OCV→SOC using the DFN-generated table."""
+        """Invert OCV→SOC using the DFN-generated table with extrapolation."""
         soc_arr, ocv_arr = self._get_ocv_arrays()
         ocv_25 = ocv + 0.0008 * (temperature_c - 25.0)
-        return float(np.clip(np.interp(ocv_25, ocv_arr, soc_arr), 0.0, 1.0))
+        
+        # Linear extrapolation below minimum OCV
+        if ocv_25 < ocv_arr[0]:
+            # Use slope from first two points for extrapolation
+            slope = (soc_arr[1] - soc_arr[0]) / (ocv_arr[1] - ocv_arr[0])
+            soc = soc_arr[0] + slope * (ocv_25 - ocv_arr[0])
+            # Allow negative SOC for deep discharge, but clip at reasonable limit
+            return float(np.clip(soc, -0.05, 1.0))
+        
+        # Linear extrapolation above maximum OCV
+        if ocv_25 > ocv_arr[-1]:
+            slope = (soc_arr[-1] - soc_arr[-2]) / (ocv_arr[-1] - ocv_arr[-2])
+            soc = soc_arr[-1] + slope * (ocv_25 - ocv_arr[-1])
+            return float(np.clip(soc, 0.0, 1.05))
+        
+        # Normal interpolation within range
+        return float(np.interp(ocv_25, ocv_arr, soc_arr))
 
     def docv_dsoc(self, soc: float, temperature_c: float = 25.0) -> float:
         """Numerical derivative dOCV/dSOC for EKF Jacobian."""
@@ -244,7 +260,7 @@ class DFNInterface:
         param = pybamm.ParameterValues(self.parameter_set)
         param["Nominal cell capacity [A.h]"] = self.cell_capacity_ah
 
-        experiment = pybamm.Experiment(["Discharge at C/20 until 3.0 V"])
+        experiment = pybamm.Experiment(["Discharge at C/20 for 40 hours or until 3.0 V"])
         solver = _get_solver(pybamm)
 
         sim = pybamm.Simulation(

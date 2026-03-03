@@ -54,10 +54,8 @@ def _init_battery_twin():
         )
         with _twin_lock:
             battery_twin = twin
-        print(f"[Twin] BatteryDigitalTwin started (PyBaMM / {param_set})")
-    except Exception as exc:
-        print(f"[Twin] WARNING: could not load BatteryDigitalTwin: {exc}")
-        print("[Twin] Dashboard will run without DFN model.")
+    except Exception:
+        pass
 
 # Start twin init in background (non-blocking)
 threading.Thread(target=_init_battery_twin, daemon=True, name="Twin-init").start()
@@ -103,8 +101,6 @@ def init_db():
 def save_sensor_data(data):
     """Save sensor data to database and broadcast via WebSocket"""
     try:
-        print(f"[{datetime.now()}] Processing: {data}")
-
         # ── Run digital twin step ───────────────────────────────────────
         twin_result = {}
         with _twin_lock:
@@ -117,20 +113,22 @@ def save_sensor_data(data):
                     temperature_c=float(data.get('temperature', 25.0)),
                     dt=2.0,
                 )
-                data['soc_ekf']     = twin_result.get('soc_pct', 0)
-                data['soh_percent'] = twin_result.get('soh', data.get('soh_percent', 100))
-                data['rul_days']    = twin_result.get('rul_days', 0)
-                data['v_predicted'] = twin_result.get('v_predicted', 0)
-                data['innovation']  = twin_result.get('innovation', 0)
-                data['full_cycles'] = twin_result.get('full_cycles', 0)
-                data['dfn_ready']   = twin_result.get('dfn_ready', False)
-                data['dfn_status']  = twin_result.get('dfn_status', 'unknown')
-                data['ocv']         = twin_result.get('ocv', 0)
-                data['sigma_soc']   = twin_result.get('sigma_soc', 0)
-                data['r0']          = twin_result.get('r0', 0)
-                data['dfn_soc']     = twin_result.get('dfn_soc', 0)
-            except Exception as exc:
-                print(f"[Twin] step error: {exc}")
+                data['soc_ekf']        = twin_result.get('soc_pct', 0)
+                data['soh_percent']    = twin_result.get('soh', data.get('soh_percent', 100))
+                data['soh_capacity']   = twin_result.get('soh_capacity', 100)
+                data['soh_resistance'] = twin_result.get('soh_resistance', 100)
+                data['rul_days']       = twin_result.get('rul_days', 0)
+                data['v_predicted']    = twin_result.get('v_predicted', 0)
+                data['innovation']     = twin_result.get('innovation', 0)
+                data['full_cycles']    = twin_result.get('full_cycles', 0)
+                data['dfn_ready']      = twin_result.get('dfn_ready', False)
+                data['dfn_status']     = twin_result.get('dfn_status', 'unknown')
+                data['ocv']            = twin_result.get('ocv', 0)
+                data['sigma_soc']      = twin_result.get('sigma_soc', 0)
+                data['r0']             = twin_result.get('r0', 0)
+                data['dfn_soc']        = twin_result.get('dfn_soc', 0)
+            except Exception:
+                pass
         # ───────────────────────────────────────────────────────────────
 
         # Save to SQLite
@@ -164,29 +162,23 @@ def save_sensor_data(data):
         socketio.emit('new_data', data)
 
         return True
-    except Exception as e:
-        print(f"Error saving data: {e}")
+    except Exception:
         return False
 
 # MQTT Event Handlers
 def on_mqtt_connect(client, userdata, flags, rc):
     """Callback for MQTT connection"""
     if rc == 0:
-        print(f"[{datetime.now()}] MQTT Connected successfully")
         client.subscribe(MQTT_TOPIC)
-        print(f"[{datetime.now()}] Subscribed to topic: {MQTT_TOPIC}")
-    else:
-        print(f"[{datetime.now()}] MQTT Connection failed with code {rc}")
 
 def on_mqtt_message(client, userdata, msg):
     """Callback for MQTT message received"""
     try:
         payload = msg.payload.decode('utf-8')
         data = json.loads(payload)
-        print(f"[{datetime.now()}] MQTT received: {data}")
         save_sensor_data(data)
-    except Exception as e:
-        print(f"[{datetime.now()}] Error processing MQTT message: {e}")
+    except Exception:
+        pass
 
 def init_mqtt():
     """Initialize MQTT client"""
@@ -205,9 +197,8 @@ def init_mqtt():
         
         mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
         mqtt_client.loop_start()
-        print(f"[{datetime.now()}] MQTT client started, connecting to {MQTT_BROKER}:{MQTT_PORT}")
-    except Exception as e:
-        print(f"[{datetime.now()}] MQTT connection error: {e}")
+    except Exception:
+        pass
 
 def get_latest_readings(limit=50):
     """Get latest readings from database"""
@@ -303,9 +294,8 @@ def sensor_data():
         else:
             return jsonify({'error': 'Failed to save data'}), 500
         
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        return jsonify({'error': 'Failed to process data'}), 500
 
 @app.route('/data', methods=['POST'])
 def data_alias():
@@ -316,7 +306,6 @@ def data_alias():
 @socketio.on('connect')
 def handle_connect():
     """Handle client connection"""
-    print(f"[{datetime.now()}] Client connected")
     emit('response', {'data': 'Connected to server'})
     with _twin_lock:
         twin = battery_twin
@@ -326,7 +315,7 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     """Handle client disconnection"""
-    print(f"[{datetime.now()}] Client disconnected")
+    pass
 
 @socketio.on('request_latest')
 def handle_request_latest():
